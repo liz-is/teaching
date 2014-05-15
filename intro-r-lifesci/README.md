@@ -16,7 +16,7 @@ If you have any trouble registering, please don't hesitate to [email me](http://
 
 ### Software setup
 
-0. Download and extract a zip file of this repository (click "Download ZIP" on the right side). It has the data you'll need to go through these examples.
+0. [Click this link to download and a zip file of this repository](https://github.com/stephenturner/teaching/archive/master.zip), then extract it somewhere on your computer (e.g. your Desktop). It has the data you'll need to go through these examples.
 0. Download and install R for [Windows](http://cran.r-project.org/bin/windows/base/) or [Mac OS X](http://cran.r-project.org/bin/macosx/) (download the R-3.x.x.pkg file for your appropriate version of OS X).
 0. Download and install RStudio Desktop: <http://www.rstudio.com/ide/download/desktop>.
 0. Launch RStudio. Ensure that you have internet access, then enter the following commands into the **Console** panel (usually the lower-left panel, by default). Note that these commands are case-sensitive.
