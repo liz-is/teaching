@@ -4,7 +4,7 @@ This workshop is directed toward life scientists with little to no experience wi
 
 **Registration**: [See below](#how-to-register).
 
-**When and where?** June 25, 2014, 2:00-5:00pm, in the Health Sciences Library Carter Classroom (first floor).
+**When and where?** June 25, 2014, 2:00-5:00pm, in the Health Sciences Library Carter Classroom (downstairs one floor and to the right).
 
 **Pre-requisites**: You must bring a laptop to the course with the necessary software installed (see instructions below). You must install this software before you can register.
 
