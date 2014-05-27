@@ -1,13 +1,8 @@
 # Introduction to R for Life Scientists
 
-
-
+Please view the [README](README.md) for installation and registration instructions. You'll need to download R, RStudio, and install a few packages before coming.
 
 Link to slides: *Please check back after the workshop*
-
-## Before coming
-
-View the [README](README.md) for installation instructions. You'll need to download R, RStudio, and install a few packages. The [README](README.md) will also give you some registration instructions.
 
 ## R basics
 
