@@ -60,19 +60,68 @@ mv SRR1145050.fastq.fq ctl4.fq
 
 
 ## Alignment
-NCPUS=8
+NCPUS=12
 MEM="40GB"
 GENOMEDIR="/home/sdt5z/genomes/star/hg19/"
 QSUB="qsub -l select=1:ncpus=$NCPUS:mem=$MEM,walltime=24:00:00 -q uvabx -W group_list=uvabx -V -j oe -m bae -M vustephen+fir@gmail.com"
-find `pwd` -name "*.fq" | sed 's/\.fq$//g' | sort | xargs -i echo $QSUB -- `which time` `which STAR` --genomeDir $GENOMEDIR --runThreadN $NCPUS --outFileNamePrefix {}.star. --readFilesIn {}.fq > runstar.sh
+find `pwd` -name "*.fq" | sed 's/\.fq$//g' | sort | xargs -i echo $QSUB -- `which time` `which STAR` --genomeDir $GENOMEDIR --runThreadN $NCPUS --outFileNamePrefix {}. --readFilesIn {}.fq > runstar.sh
 
 ## Count
-featureCounts -a ~/genomes/igenomes/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf -o counts.txt -T 12 -t exon -g gene_id *.sam
+# featureCounts -a ~/genomes/igenomes/Homo_sapiens/UCSC/hg19/Annotation/Genes/genes.gtf -o counts.txt -T 12 -t exon -g gene_id *.sam
 
 ## Extract chr4:60000000-160000000
-NCPUS=8
-MEM="40GB"
-QSUB="qsub -l select=1:ncpus=$NCPUS:mem=$MEM,walltime=24:00:00 -q uvabx -W group_list=uvabx -V -j oe -m bae -M vustephen+fir@gmail.com"
-find *.sam | sed 's/.star.Aligned.out.sam//g' | sort | parallel --dry-run 'samtools view -Sb {}.star.Aligned.out.sam | samtools sort -o - | bedtools intersect -abam - -b roi.bed | bedtools bamtofastq -i - -fq {}.fastq'
+echo -e "chr4\t60000000\t160000000" > roi.bed
+find *.sam | sed 's/.Aligned.out.sam//g' | sort | parallel --dry-run 'samtools view -Sb {}.Aligned.out.sam | bedtools intersect -abam - -b roi.bed | bedtools bamtofastq -i - -fq {}.fastq'
+```
+
+
+## New data
+
+```bash
+# extract
+gunzip *.fastq.gz
+
+# fastqc
+find *.fastq | parallel --dry-run fastqc {} --outdir .
+
+# trim
+mkdir Untrimmed
+mv *.fastq Untrimmed
+cd Untrimmed
+find *.fastq | parallel --dry-run fastx_trimmer -t 5 -Q33 -i {} -o ../{}
+cd ..
+head ctl1.fastq
+head Untrimmed/ctl1.fastq
+
+# get chromosome 4 fasta
+# http://hgdownload.cse.ucsc.edu/goldenPath/hg19/chromosomes/chr4.fa.gz
+# google "ensembl download fasta"
+mkdir Index
+cd Index
+wget ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna.chromosome.4.fa.gz
+gunzip Homo_sapiens.GRCh37.75.dna.chromosome.4.fa.gz
+mv Homo_sapiens.GRCh37.75.dna.chromosome.4.fa chr4.fa
+
+# create index
+bowtie-build chr4.fa chr4
+
+# While that's building, let's make annotation
+cd Annotation
+wget ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.75.dna.chromosome.4.fa.gz
+gunzip Homo_sapiens.GRCh37.75.gtf.gz
+
+# create index
+bowtie-build chr4.fa chr4
+
+# map
+find *.fastq | parallel --dry-run tophat --bowtie1 --no-coverage-search -o {}_tophat Index/chr4 {}
+more */align_summary.txt
+
+# rename
+find . -name "accepted_hits.bam"
+find . -name "accepted_hits.bam" | sed 's/.fastq_tophat//g'
+find . -name "accepted_hits.bam" | sed 's/.fastq_tophat\/accepted_hits.bam//g' | parallel --dry-run ln -s {}.fastq_tophat/accepted_hits.bam {}.bam
+
+# count
 
 ```
