@@ -117,11 +117,8 @@ bowtie-build chr4.fa chr4
 find *.fastq | parallel --dry-run tophat --bowtie1 --no-coverage-search -o {}_tophat Index/chr4 {}
 more */align_summary.txt
 
-# rename
-find . -name "accepted_hits.bam"
-find . -name "accepted_hits.bam" | sed 's/.fastq_tophat//g'
-find . -name "accepted_hits.bam" | sed 's/.fastq_tophat\/accepted_hits.bam//g' | parallel --dry-run ln -s {}.fastq_tophat/accepted_hits.bam {}.bam
-
 # count
 
+```
+featureCounts -a Annotation/Homo_sapiens.GRCh37.75.gtf -o counts.txt -t exon -g gene_name */accepted_hits.bam
 ```
