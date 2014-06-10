@@ -2,7 +2,7 @@
 
 # Import data from featureCounts
 ## Filename with output from featureCounts
-countfile <- "scratch/counts.txt"
+countfile <- "data/counts.txt"
 ## Read in the data
 countdata <- read.table(countfile, header=TRUE, row.names=1)
 ## Take a look at the first few lines
@@ -22,7 +22,7 @@ c("ctl1", "ctl2", "ctl3", "ctl4", "uvb1", "uvb2", "uvb3", "uvb4", "uvb5")
 paste("ctl", 1:4)
 paste("ctl", 1:4, sep="")
 c(paste("ctl", 1:4, sep=""), paste("uvb", 1:5, sep=""))
-## Using gsub
+## Using gsub -- reproducible
 ?gsub
 gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
 colnames(countdata) <- gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
@@ -34,17 +34,14 @@ countdata <- as.matrix(countdata)
 class(countdata)
 head(countdata)
 
-# Create condition variable
-condition <- gsub("\\d", "", colnames(countdata))
-condition
+# read in column data
+coldata <- read.csv("data/coldata.csv", row.names=1)
 
 # Analysis with DESeq2 ----------------------------------------------------
 
 library(DESeq2)
 
 # Create a coldata frame and instantiate the DESeqDataSet
-coldata <- data.frame(row.names=colnames(countdata), condition)
-coldata
 dds <- DESeqDataSetFromMatrix(countData=countdata, colData=coldata, design=~condition)
 dds
 
@@ -55,15 +52,16 @@ dds <- DESeq(dds)
 res <- results(dds)
 head(res)
 table(res$padj<0.05)
-# Order by adjusted p-value
+## Order by adjusted p-value
 res <- res[order(res$padj), ]
-# Merge with normalized count data
+## Merge with normalized count data
 resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)), by="row.names", sort=FALSE)
-names(resdata)[1] <- "Gene"
 head(resdata)
-# Write results
-write.csv(resdata, file="foff-ipsc-run1-diffexpr-results.csv")
-
+names(resdata)[1] <- "GeneID"
+head(resdata)
+## Write results
+sig <- subset(resdata, padj<0.05)
+write.csv(sig, file="results/sig.csv")
 
 # Data Visualization ------------------------------------------------------
 
@@ -72,8 +70,6 @@ plotDispEsts(dds, main="Dispersion plot")
 
 ## Regularized log transformation for clustering/heatmaps, etc
 rld <- rlogTransformation(dds)
-head(assay(rld))
-
 plotPCA(rld)
 
 # Sample distance heatmap
@@ -89,6 +85,8 @@ library(gplots)
 heatmap.2(sampleDists)
 heatmap.2(sampleDists, col=colorpanel(64, "steelblue", "white"), key=FALSE, trace="none")
 heatmap.2(sampleDists, col=colorpanel(64, "black", "white"), key=FALSE, trace="none")
+heatmap.2(sampleDists, col=colorpanel(64, "red", "black", "green"), key=FALSE, trace="none")
+heatmap.2(sampleDists, col=colorpanel(64, "red", "white", "blue"), key=FALSE, trace="none")
 
 ## Examine plot of p-values
 hist(res$pvalue, breaks=50, col="grey")
