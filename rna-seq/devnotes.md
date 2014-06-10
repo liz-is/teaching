@@ -1,4 +1,38 @@
-## Get data
+# Notes on setting up RNA-seq workshop
+
+Intro - will need "remedial" linux/R session at beginning?
+
+First download some data, analyze it, find interesting genes/regions, extract very small fastq from bam files so can do alignment in reasonable time frame. Also, get data only from a single chromosome, so can index that chromosome for aligner so can do this with small amount of RAM on a VM running on an average laptop.
+
+To do:
+* convert analysis .R script to .Rmd
+* write readme
+* adapt intro linux/R materials from SWC or other materials
+* load everything on to VM and test
+* figure out registration w/ eventbrite
+* pick a date
+
+
+## VM
+
+Stuff need install on VM
+
+* bowtie
+* tophat
+* vim
+* nano
+* git
+* R
+* RStudio
+
+Download human genome chromosome 4 from ucsc in case poor internet connection
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/chromosomes/chr4.fa.gz
+
+`alias l="ls -l --color=always"`
+
+etc.
+
+## Orig data
 
 Paper: http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0093338
 
@@ -75,7 +109,7 @@ find *.sam | sed 's/.Aligned.out.sam//g' | sort | parallel --dry-run 'samtools v
 ```
 
 
-## New data
+## New small data
 
 ```bash
 # extract
@@ -118,7 +152,5 @@ find *.fastq | parallel --dry-run tophat --bowtie1 --no-coverage-search -o {}_to
 more */align_summary.txt
 
 # count
-
-```
 featureCounts -a Annotation/Homo_sapiens.GRCh37.75.gtf -o counts.txt -t exon -g gene_name */accepted_hits.bam
 ```
