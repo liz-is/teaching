@@ -17,6 +17,8 @@ To do:
 
 Stuff need install on VM
 
+https://github.com/Homebrew/homebrew-science
+
 * bowtie
 * tophat
 * vim
