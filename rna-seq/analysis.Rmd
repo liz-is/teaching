@@ -13,10 +13,9 @@ head(countdata)
 colnames(countdata)
 class(countdata)
 ```
-Have a look at the data. It contains genes (rows) with information about the gene positions in the first five columns and then information about the number of reads aligning to the gene in each experimental sample. We don't need the information on gene position, so we can remove it from the data frame.
+Have a look at the data. It contains information about genes (one gene per row) with the gene positions in the first five columns and then information about the number of reads aligning to the gene in each experimental sample. We don't need the information on gene position, so we can remove it from the data frame.
 
 ```{r}
-
 # Remove first five columns (chr, start, end, strand, length)
 countdata <- countdata[ ,-(1:5)] 
 head(countdata)
@@ -24,20 +23,55 @@ colnames(countdata)
 ```
 
 We can rename the columns to something a bit more readable.
-```{r}
+```{r eval=FALSE}
 ## Manually
-c("ctl1", "ctl2", "ctl3", "ctl4", "uvb1", "uvb2", "uvb3", "uvb4", "uvb5")
+c("ctl1", "ctl2", "ctl3", "uvb1", "uvb2", "uvb3")
 ## Using paste and rep
 ?paste
-paste("ctl", 1:4)
-paste("ctl", 1:4, sep="")
-c(paste("ctl", 1:4, sep=""), paste("uvb", 1:5, sep=""))
+paste("ctl", 1:3)
+paste("ctl", 1:3, sep="")
+?paste0
+paste0("ctl", 1:3)
+c(paste0("ctl", 1:4), paste0("uvb", 1:5))
+```
+
+```{r}
 ## Using gsub -- reproducible
 ?gsub
 gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
 colnames(countdata) <- gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
 head(countdata)
 ```
+
+We can investigate this data a bit more using some of the basic R functions before going on to use more sophisticated analysis tools.
+
+calculate the mean for each gene for each condition.
+```{r}
+#get Control columns
+colnames(countdata)
+grep("ctl", colnames(countdata))
+colnames(countdata)[grep("ctl", colnames(countdata))]
+ctlCols <- colnames(countdata)[grep("ctl", colnames(countdata))]
+head(countdata[,ctlCols])
+
+countdata$ctlMean <- apply(countdata[, ctlCols], 1, mean)
+
+#same for uvb
+uvbCols <- colnames(countdata)[grep("uvb", colnames(countdata))]
+countdata$uvbMean <- apply(countdata[, uvbCols], 1, mean)
+
+```
+Plot the mean expression of each gene in control against the UVB sample mean. Look for outliers.
+
+```{r}
+plot(countdata$ctlMean, countdata$uvbMean)
+
+library(ggplot2)
+ggplot(countdata, aes(x=ctlMean, y=uvbMean)) + geom_point()
+```
+
+How could you make this plot more informative and nicer to look at? Hint: try using a log scale
+
 
 DESeq2 analysis
 ---------
