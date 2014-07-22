@@ -11,6 +11,7 @@ countfile <- "data/counts.txt"
 countdata <- read.table(countfile, header=TRUE, row.names=1)
 head(countdata)
 colnames(countdata)
+class(countdata)
 ```
 Have a look at the data. It contains genes (rows) with information about the gene positions in the first five columns and then information about the number of reads aligning to the gene in each experimental sample. We don't need the information on gene position, so we can remove it from the data frame.
 
@@ -20,4 +21,142 @@ Have a look at the data. It contains genes (rows) with information about the gen
 countdata <- countdata[ ,-(1:5)] 
 head(countdata)
 colnames(countdata)
+```
+
+We can rename the columns to something a bit more readable.
+```{r}
+## Manually
+c("ctl1", "ctl2", "ctl3", "ctl4", "uvb1", "uvb2", "uvb3", "uvb4", "uvb5")
+## Using paste and rep
+?paste
+paste("ctl", 1:4)
+paste("ctl", 1:4, sep="")
+c(paste("ctl", 1:4, sep=""), paste("uvb", 1:5, sep=""))
+## Using gsub -- reproducible
+?gsub
+gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
+colnames(countdata) <- gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
+head(countdata)
+```
+
+DESeq2 analysis
+---------
+
+DESeq2 is an R package for analysis of RNAseq data. It is available from [Bioconductor](http://www.bioconductor.org/). [Explain packages and Bioconductor?]
+
+```{r}
+#install and have a break to check everyone is up to date?
+source("http://bioconductor.org/biocLite.R")
+biocLite("DESeq2")
+#explain bioconductor?
+library(DESeq2)
+
+```
+ It requires the count data to be in matrix form, and an additional dataframe describing the structure of the experiment.
+
+```{r}
+# Convert to matrix
+class(countdata)
+countdata <- as.matrix(countdata)
+class(countdata)
+head(countdata)
+
+# construct coldata dataframe
+#three replicates of control and UVB.
+coldata <- data.frame(condition=c(rep("ctl", 3), rep("uvb",3)), row.names=colnames(countdata))
+```
+
+DESeq works on a particular type of object called a DESeqDataSet. 
+```{r}
+#introduce how DESeq2 works - type of object it works on etc
+# instantiate the DESeqDataSet
+dds <- DESeqDataSetFromMatrix(countData=countdata, colData=coldata, design=~condition)
+dds
+```
+
+Run the DESeq pipeline on this object. [Describe pipeline steps?]
+Get results and have a look at them
+```{r}
+dds <- DESeq(dds)
+
+# Get differential expression results
+res <- results(dds)
+head(res)
+table(res$padj<0.05)
+## Order by adjusted p-value
+res <- res[order(res$padj), ]
+head(res)
+```
+
+Combine DEseq results with the original counts data. Write significant results to a file.
+```{r}
+resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)), by="row.names", sort=FALSE)
+head(resdata)
+names(resdata)[1] <- "GeneID"
+head(resdata)
+
+sig <- subset(resdata, padj<0.05)
+write.table(sig, file="results/sig.txt", sep="\t") #tab delim data
+```
+
+Data Visualization
+------------------
+
+We can also do some exploratory plotting of the data.
+
+```{r}
+plotDispEsts(dds, main="Dispersion plot")
+```
+
+```{r}
+## Regularized log transformation for clustering/heatmaps, etc
+rld <- rlogTransformation(dds)
+plotPCA(rld)
+
+# Sample distance heatmap
+head(assay(rld))
+assay(rld)[1:5,1:5]
+t(assay(rld))[1:5,1:5]
+dist(t(assay(rld)))
+as.matrix(dist(t(assay(rld))))
+sampleDists <- as.matrix(dist(t(assay(rld))))
+heatmap(sampleDists)
+## better heatmap with gplots
+install.packages("gplots")
+library(gplots)
+heatmap.2(sampleDists)
+heatmap.2(sampleDists, col=colorpanel(64, "steelblue", "white"), key=FALSE, trace="none")
+heatmap.2(sampleDists, col=colorpanel(64, "black", "white"), key=FALSE, trace="none")
+heatmap.2(sampleDists, col=colorpanel(64, "red", "black", "green"), key=FALSE, trace="none")
+heatmap.2(sampleDists, col=colorpanel(64, "red", "white", "blue"), key=FALSE, trace="none")
+
+## Examine plot of p-values
+hist(res$pvalue, breaks=50, col="grey")
+```
+
+
+```{r}
+#These are the plots that are most recognisable from papers
+# MA Plot
+par(pch=16)
+with(res, plot(baseMean, log2FoldChange, pch=20, cex=.5, log="x"))
+with(subset(res, padj<.05), points(baseMean, log2FoldChange, col="red", pch=16))
+## add points
+install.packages("calibrate")
+library(calibrate)
+?textxy
+res$Gene <- rownames(res)
+with(subset(res, padj<.05), textxy(baseMean, log2FoldChange, labs=Gene, cex=1, col=2))
+
+# Volcano plot
+## Set point character
+par(pch=16)
+with(res, plot(log2FoldChange, -log10(pvalue), main="Volcano plot"))
+with(subset(res, padj<.05 ), points(log2FoldChange, -log10(pvalue), col="red"))
+with(subset(res, abs(log2FoldChange)>1), points(log2FoldChange, -log10(pvalue), col="orange"))
+with(subset(res, padj<.05 & abs(log2FoldChange)>1), points(log2FoldChange, -log10(pvalue), col="green"))
+## Add legend
+legend("topleft", legend=c("FDR<0.05", "|LFC|>1", "both"), pch=16, col=c("red","orange","green"))
+## Label points
+with(subset(res, padj<.05 & abs(log2FoldChange)>1), textxy(log2FoldChange, -log10(pvalue), labs=Gene, cex=1))
 ```
