@@ -38,12 +38,7 @@ class(countdata)
 head(countdata)
 
 # read in column data
-coldata <- read.csv("data/coldata.csv", row.names=1)
-
-coldata <- c(rep("ctl", 3), rep("uvb",3))
-names(coldata) <- colnames(countdata)
-coldata <- as.data.frame(coldata)
-names(coldata) <- "condition"
+coldata <- data.frame(condition=c(rep("ctl", 3), rep("uvb",3)), row.names=colnames(countdata))
 
 # Analysis with DESeq2 ----------------------------------------------------
 source("http://bioconductor.org/biocLite.R")
