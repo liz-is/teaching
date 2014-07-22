@@ -28,6 +28,9 @@ gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(count
 colnames(countdata) <- gsub(pattern=".fastq_tophat.accepted_hits.bam", replacement="", x=colnames(countdata))
 head(countdata)
 
+##here get averages etc?
+
+
 # Convert to matrix
 class(countdata)
 countdata <- as.matrix(countdata)
@@ -37,10 +40,19 @@ head(countdata)
 # read in column data
 coldata <- read.csv("data/coldata.csv", row.names=1)
 
+coldata <- c(rep("ctl", 3), rep("uvb",3))
+names(coldata) <- colnames(countdata)
+coldata <- as.data.frame(coldata)
+names(coldata) <- "condition"
+
 # Analysis with DESeq2 ----------------------------------------------------
+source("http://bioconductor.org/biocLite.R")
+biocLite("DESeq2")
+#explain bioconductor
 
 library(DESeq2)
 
+#introduce how DESeq2 works - type of object it works on etc
 # Create a coldata frame and instantiate the DESeqDataSet
 dds <- DESeqDataSetFromMatrix(countData=countdata, colData=coldata, design=~condition)
 dds
@@ -81,6 +93,7 @@ as.matrix(dist(t(assay(rld))))
 sampleDists <- as.matrix(dist(t(assay(rld))))
 heatmap(sampleDists)
 ## better heatmap with gplots
+install.packages("gplots")
 library(gplots)
 heatmap.2(sampleDists)
 heatmap.2(sampleDists, col=colorpanel(64, "steelblue", "white"), key=FALSE, trace="none")
@@ -96,6 +109,7 @@ par(pch=16)
 with(res, plot(baseMean, log2FoldChange, pch=20, cex=.5, log="x"))
 with(subset(res, padj<.05), points(baseMean, log2FoldChange, col="red", pch=16))
 ## add points
+install.packages("calibrate")
 library(calibrate)
 ?textxy
 res$Gene <- rownames(res)
